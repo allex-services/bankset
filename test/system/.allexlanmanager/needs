@@ -1,0 +1,10 @@
+[
+  {
+    "modulename": "allex_banksetservice",
+    "instancename": "BankSet",
+    "debug": true,
+    "propertyhash": {
+      "path": "bankset.db"
+    }
+  }
+]
