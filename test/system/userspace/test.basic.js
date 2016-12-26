@@ -1,23 +1,7 @@
-var chai = require('chai'),
-  chap = require('chai-as-promised'),
-  expect,
-  execlib = require('allex'),
-  lib = execlib.lib,
-  q = lib.q,
-  qlib = lib.qlib,
-  BankSet = require('../')(execlib),
-  Bank,
+var BankSet, // = require('../')(execlib),
   _banknames = ['001', '002', '003'],
   _usernames = ['peter', 'paul', 'mary'];
  
-chai.use(chap);
-expect = chai.expect;
-
-function ctorsetter(banklib) {
-  Bank = banklib.Bank;
-  return q(true);
-}
-
 function all(num) {
   var i, j, ret = [], r;
   for (i=0; i<_banknames.length; i++) {
@@ -35,7 +19,7 @@ function popper1 () {
 }
 
 function itemprinter (item) {
-  //console.log('item', item);
+  console.log('item', item);
 }
 
 function accountfiller (bankset, bankname, accountname) {
@@ -96,7 +80,7 @@ function applytobankset (bankset, args) {
 }
 
 describe('Basic tests', function () {
-  var _bankset, _reservations;
+  var _reservations;
   function reservationsetter(reservations) {
     _reservations = reservations;
     return q(reservations);
@@ -105,20 +89,17 @@ describe('Basic tests', function () {
     var r = _reservations[banknameindex][accountnameindex];
     return {pop:1, should_expand: [r[0], r[1]]};
   }
-  it('Load library', function () {
-    return execlib.loadDependencies('client', ['allex:leveldbbank:lib'], ctorsetter);
-  });
-  it('new BankSet has to throw if no prophash given', function () {
-    expect(function (){new BankSet()}).to.throw(/hash in its ctor/);
-  });
-  it('new BankSet has to throw if no path specified', function () {
-    expect(function (){new BankSet({})}).to.throw(/has to have a path/);
+  loadServerSide(['allex:bankset']);
+  it('Set internal variables', function () {
+    BankSet = allexbankset;
   });
   it('Instantiate BankSet', function () {
+    var d = q.defer(), ret = d.promise;
     _bankset = new BankSet({
       path: 'bankset.db',
-      bankctor: Bank
+      __readyToAcceptUsers: d
     });
+    return ret;
   });
   it('Read accounts with default', function () {
     this.timeout(150000);
