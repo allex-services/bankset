@@ -1,13 +1,50 @@
-function createUser(execlib, ParentUser, leveldblib) {
+function createUser(execlib, ParentUser, banksetlib, leveldblib) {
   'use strict';
 
   var lib = execlib.lib,
     q = lib.q,
-    qlib = lib.qlib;
+    qlib = lib.qlib,
+    execSuite = execlib.execSuite,
+    HookableUserSessionMixin = banksetlib.Hook, //leveldblib.HookableUserSessionMixin,
+    UserSession,
+    Channel;
 
   if (!ParentUser) {
     ParentUser = execlib.execSuite.ServicePack.Service.prototype.userFactory.get('user');
   }
+
+  UserSession = ParentUser.prototype.getSessionCtor('.');
+  Channel = UserSession.Channel;
+
+
+  function KVStorageChannel (usersession){
+    Channel.call(this, usersession);
+  }
+  lib.inherit(KVStorageChannel, Channel);
+  KVStorageChannel.prototype.name = 'l';
+
+  function KVStorageSession (user, session, gate) {
+    UserSession.call(this, user, session, gate);
+    HookableUserSessionMixin.call(this, {
+      leveldb: this.user.__service,
+      cb: this.onBankData.bind(this)
+    });
+    this.addChannel(KVStorageChannel);
+  }
+
+  UserSession.inherit(KVStorageSession, leveldblib.HookableUserSessionMixin.__methodDescriptors);
+  HookableUserSessionMixin.addMethods(KVStorageSession);
+
+  KVStorageSession.prototype.__cleanUp = function () {
+    HookableUserSessionMixin.prototype.destroy.call(this);
+    UserSession.prototype.__cleanUp.call(this);
+  };
+  KVStorageSession.prototype.onBankData = function (key, value) {
+    this.sendOOB('l', [key, value]);
+  };
+
+  KVStorageSession.Channel = KVStorageChannel;
+
 
   function User(prophash) {
     ParentUser.call(this, prophash);
@@ -79,6 +116,8 @@ function createUser(execlib, ParentUser, leveldblib) {
   User.prototype.doTheStreamLevelDB = function (options, defer, dbname, bank) {
     this.streamLevelDB(bank[dbname], options, defer);
   };
+
+  User.prototype.getSessionCtor = execSuite.userSessionFactoryCreator(KVStorageSession);
 
   return User;
 }

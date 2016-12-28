@@ -1,22 +1,24 @@
-function createBankSetService(execlib, ParentService, BankSet, leveldblib) {
+function createBankSetService(execlib, ParentService, banksetlib, leveldblib) {
   'use strict';
 
   var lib = execlib.lib,
     q = lib.q,
-    qlib = lib.qlib;
+    qlib = lib.qlib,
+    BankSet = banksetlib.BankSet;
   
 
   function factoryCreator(parentFactory) {
     return {
       'service': require('./users/serviceusercreator')(execlib, parentFactory.get('service')),
-      'user': require('./users/usercreator')(execlib, parentFactory.get('user'), leveldblib) 
+      'user': require('./users/usercreator')(execlib, parentFactory.get('user'), banksetlib, leveldblib) 
     };
   }
 
   function BankSetService(prophash) {
     ParentService.call(this, prophash);
+    prophash.starteddefer = this.readyToAcceptUsersDefer;
     BankSet.call(this, prophash);
-    execlib.loadDependencies('client', [prophash.bankmodulename || 'allex:leveldbbank:lib'], this.onBankModule.bind(this, prophash));
+    execlib.loadDependencies('client', [prophash.bankmodulename || 'allex:leveldbbank:lib'], this.onBankModule.bind(this, prophash))
   }
   
   ParentService.inherit(BankSetService, factoryCreator);
@@ -48,7 +50,6 @@ function createBankSetService(execlib, ParentService, BankSet, leveldblib) {
       throw new lib.Error('NO_BANK_CONSTRUCTOR', 'Bank constructor could not be found in '+prophash.bankmodulename);
     }
     this.setBankCtor(bankctor);
-    this.readyToAcceptUsersDefer.resolve(true);
     prophash = null;
   };
 

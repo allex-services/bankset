@@ -2,6 +2,8 @@ var _banknames = ['001', '002', '003'],
   _usernames = ['peter', 'paul', 'mary'],
   _reservations;
 
+loadMochaIntegration('allex_leveldblib');
+
 function leveldbsetter (_leveldblib) {
   //console.log(_leveldblib);
   leveldblib = _leveldblib;
@@ -127,31 +129,6 @@ function go (taskobj) {
   taskobj.execlib.loadDependencies('client', ['allex:leveldb:lib'], leveldbsetter).then(runTests.bind(null, taskobj));
 }
 
-function runTests (taskobj) {
-  var PromiseExecutorJob = qlib.PromiseExecutorJob;
-  pej = new PromiseExecutorJob([
-    test('Read accounts with default', taskobj.sink, ['readAccountWDefault', 0]),
-    test('Read accounts safe', taskobj.sink, ['readAccountSafe', 0]),
-    test('Fill some accounts with random money', taskobj.sink, ['charge', {_evaluate: randomAmount.bind(null, -2000, -1000)}, ['fill']]),
-    test('Close accounts', taskobj.sink, ['closeAccount']),
-    test('Read non-existing accounts should throw', taskobj.sink, ['readAccount']),
-    test('Read accounts safe', taskobj.sink, ['readAccountSafe', 0]),
-    test('Fill some accounts with 1000', taskobj.sink, ['charge', -1000, ['fill']]),
-    test('Reserve 300 on accounts', taskobj.sink, ['reserve', 300, ['reserve']], reservationsetter),
-    test('Commit reservations on accounts', taskobj.sink, ['commitReservation', {_evaluate: reservation4use}, ['commit']]),
-    test('Read accounts', taskobj.sink, ['readAccount']),
-    test('Reserve 300 on accounts', taskobj.sink, ['reserve', 300, ['reserve']], reservationsetter),
-    test('Cancel reservations on accounts', taskobj.sink, ['cancelReservation', {_evaluate: reservation4use}, ['commit']]),
-    test('Read accounts', taskobj.sink, ['readAccount']),
-    test('Reserve 300 on accounts', taskobj.sink, ['reserve', 300, ['reserve']], reservationsetter),
-    test('Partially commit reservations on accounts', taskobj.sink, ['partiallyCommitReservation', {_evaluate: reservation4use}, 100, ['commit']]),
-    stream('Traverse Accounts', taskobj.sink, 'traverseAccounts', {pagesize:5}),
-    stream('Traverse Reservations', taskobj.sink, 'traverseReservations', {pagesize:5}),
-    stream('Traverse Transactions', taskobj.sink, 'traverseTransactions', {pagesize:5})
-  ]);
-  return pej.go();
-}
-
 describe('Basic tests', function () {
   loadClientSide(['allex:leveldb:lib']);
   it('Connect', function () {
@@ -163,8 +140,16 @@ describe('Basic tests', function () {
       }
     });
   });
-  it('Run tests', function () {
-    runTests({sink:BankSet});
+  createSinkLevelDBHookIt({
+    instancename: 'HookPeter',
+    sinkname: 'BankSet',
+    hookTo: {keys:['***', 'peter'], scan: true},
+    cb: console.log.bind(console, 'peter:')
+  });
+  it('Test Hook', function () {
+    var ret = HookPeter.wait();
+    BankSet.call('charge', '001', 'peter', -100, ['test charge']);
+    return expect(ret).to.eventually.equal(1);
   });
 });
 
