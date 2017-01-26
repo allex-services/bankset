@@ -7,7 +7,8 @@ function createUser(execlib, ParentUser, banksetlib, leveldblib) {
     execSuite = execlib.execSuite,
     HookableUserSessionMixin = banksetlib.Hook, //leveldblib.HookableUserSessionMixin,
     UserSession,
-    Channel;
+    Channel,
+    _husmmd = leveldblib.HookableUserSessionMixin.__methodDescriptors;
 
   if (!ParentUser) {
     ParentUser = execlib.execSuite.ServicePack.Service.prototype.userFactory.get('user');
@@ -23,16 +24,24 @@ function createUser(execlib, ParentUser, banksetlib, leveldblib) {
   lib.inherit(KVStorageChannel, Channel);
   KVStorageChannel.prototype.name = 'l';
 
+  function LogStorageChannel (usersession){
+    Channel.call(this, usersession);
+  }
+  lib.inherit(LogStorageChannel, Channel);
+  LogStorageChannel.prototype.name = 'g';
+
   function KVStorageSession (user, session, gate) {
     UserSession.call(this, user, session, gate);
     HookableUserSessionMixin.call(this, {
       leveldb: this.user.__service,
-      cb: this.onBankData.bind(this)
+      cb: this.onBankData.bind(this),
+      logcb: this.onTxnData.bind(this)
     });
     this.addChannel(KVStorageChannel);
+    this.addChannel(LogStorageChannel);
   }
 
-  UserSession.inherit(KVStorageSession, leveldblib.HookableUserSessionMixin.__methodDescriptors);
+  UserSession.inherit(KVStorageSession, lib.extend({}, _husmmd, {hookToLog: _husmmd.hook, unhookFromLog: _husmmd.unhook}));
   HookableUserSessionMixin.addMethods(KVStorageSession);
 
   KVStorageSession.prototype.__cleanUp = function () {
@@ -41,6 +50,9 @@ function createUser(execlib, ParentUser, banksetlib, leveldblib) {
   };
   KVStorageSession.prototype.onBankData = function (key, value) {
     this.sendOOB('l', [key, value]);
+  };
+  KVStorageSession.prototype.onTxnData = function (key, value) {
+    this.sendOOB('g', [key, value]);
   };
 
   KVStorageSession.Channel = KVStorageChannel;

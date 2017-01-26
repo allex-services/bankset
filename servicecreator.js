@@ -40,6 +40,7 @@ function createBankSetService(execlib, ParentService, banksetlib, leveldblib) {
     if (!banklib) {
       throw new lib.Error('NO_BANKLIB_MODULE', 'Could not load the specified banklib module');
     }
+    console.log('banklib', banklib);
     if (lib.isFunction(banklib.Bank)) {
       bankctor = banklib.Bank;
     }
