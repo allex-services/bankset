@@ -4,3 +4,4 @@ node_modules/*
 needs.overlay
 needs.runtime
 *.db
+allexmaster.pid

@@ -168,11 +168,3 @@ describe('Basic tests', function () {
   });
 });
 
-
-module.exports = {
-  sinkname: 'BankSet',
-  identity: {name: 'user', role: 'user'},
-  task: {
-    name: go
-  }
-};

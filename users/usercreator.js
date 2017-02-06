@@ -5,57 +5,45 @@ function createUser(execlib, ParentUser, banksetlib, leveldblib) {
     q = lib.q,
     qlib = lib.qlib,
     execSuite = execlib.execSuite,
-    HookableUserSessionMixin = banksetlib.Hook, //leveldblib.HookableUserSessionMixin,
-    UserSession,
-    Channel,
-    _husmmd = leveldblib.HookableUserSessionMixin.__methodDescriptors;
+    QuerableUserSessionMixin = leveldblib.QuerableUserSessionMixin,
+    qmpd = QuerableUserSessionMixin.queryMethodParamDescriptor,
+    UserSession;
 
   if (!ParentUser) {
     ParentUser = execlib.execSuite.ServicePack.Service.prototype.userFactory.get('user');
   }
 
   UserSession = ParentUser.prototype.getSessionCtor('.');
-  Channel = UserSession.Channel;
 
-
-  function KVStorageChannel (usersession){
-    Channel.call(this, usersession);
-  }
-  lib.inherit(KVStorageChannel, Channel);
-  KVStorageChannel.prototype.name = 'l';
-
-  function LogStorageChannel (usersession){
-    Channel.call(this, usersession);
-  }
-  lib.inherit(LogStorageChannel, Channel);
-  LogStorageChannel.prototype.name = 'g';
 
   function KVStorageSession (user, session, gate) {
     UserSession.call(this, user, session, gate);
-    HookableUserSessionMixin.call(this, {
-      leveldb: this.user.__service,
-      cb: this.onBankData.bind(this),
-      logcb: this.onTxnData.bind(this)
-    });
-    this.addChannel(KVStorageChannel);
-    this.addChannel(LogStorageChannel);
+    QuerableUserSessionMixin.call(this);
   }
 
-  UserSession.inherit(KVStorageSession, lib.extend({}, _husmmd, {hookToLog: _husmmd.hook, unhookFromLog: _husmmd.unhook}));
-  HookableUserSessionMixin.addMethods(KVStorageSession);
+  UserSession.inherit(KVStorageSession, {
+    query: qmpd,
+    queryLog: qmpd,
+    stopQuery: QuerableUserSessionMixin.stopQueryMethodDescriptor
+  });
+  QuerableUserSessionMixin.addMethods(KVStorageSession);
 
   KVStorageSession.prototype.__cleanUp = function () {
-    HookableUserSessionMixin.prototype.destroy.call(this);
+    QuerableUserSessionMixin.prototype.destroy.call(this);
     UserSession.prototype.__cleanUp.call(this);
   };
-  KVStorageSession.prototype.onBankData = function (key, value) {
-    this.sendOOB('l', [key, value]);
-  };
-  KVStorageSession.prototype.onTxnData = function (key, value) {
-    this.sendOOB('g', [key, value]);
-  };
 
-  KVStorageSession.Channel = KVStorageChannel;
+  function selfservice(service) {
+    return service;
+  }
+  KVStorageSession.prototype.query = QuerableUserSessionMixin.queryMethodGenerator(selfservice, 'query');
+  /*
+  KVStorageSession.prototype.query = function (dbname, filterdesc, scaninitially, defer) {
+    console.log('query', dbname, filterdesc);
+    defer.resolve(0);
+  };
+  */
+  KVStorageSession.prototype.queryLog = QuerableUserSessionMixin.queryMethodGenerator(selfservice, 'queryLog');
 
 
   function User(prophash) {
