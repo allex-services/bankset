@@ -89,7 +89,7 @@ describe('Basic tests', function () {
     var r = _reservations[banknameindex][accountnameindex];
     return {pop:1, should_expand: [r[0], r[1]]};
   }
-  loadServerSide(['allex:bankset']);
+  loadServerSide(['allex_banksetservice']);
   it('Set internal variables', function () {
     BankSet = allexbankset;
   });
