@@ -18,7 +18,7 @@ function createBankSetService(execlib, ParentService, banksetlib, leveldblib) {
     ParentService.call(this, prophash);
     prophash.starteddefer = this.readyToAcceptUsersDefer;
     BankSet.call(this, prophash);
-    execlib.loadDependencies('client', [prophash.bankmodulename || 'allex:leveldbbank:lib'], this.onBankModule.bind(this, prophash))
+    execlib.loadDependencies('client', [prophash.bankmodulename || 'allex_leveldbbanklib'], this.onBankModule.bind(this, prophash))
   }
   
   ParentService.inherit(BankSetService, factoryCreator);

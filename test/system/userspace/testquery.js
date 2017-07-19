@@ -13,7 +13,7 @@ function peterBalanceSaver (kva) {
 }
 
 describe('Basic tests', function () {
-  loadClientSide(['allex:leveldb:lib']);
+  loadClientSide(['allex_leveldblib']);
   it('Connect', function () {
     return findSink({
       sinkname: 'BankSet',

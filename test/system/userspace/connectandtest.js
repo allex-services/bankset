@@ -124,7 +124,7 @@ function go (taskobj) {
   lib = taskobj.execlib.lib;
   q = lib.q;
   qlib = lib.qlib;
-  taskobj.execlib.loadDependencies('client', ['allex:leveldb:lib'], leveldbsetter).then(runTests.bind(null, taskobj));
+  taskobj.execlib.loadDependencies('client', ['allex_leveldblib'], leveldbsetter).then(runTests.bind(null, taskobj));
 }
 
 function runTests (taskobj) {
@@ -153,7 +153,7 @@ function runTests (taskobj) {
 }
 
 describe('Basic tests', function () {
-  loadClientSide(['allex:leveldb:lib']);
+  loadClientSide(['allex_leveldblib']);
   it('Connect', function () {
     return findSink({
       sinkname: 'BankSet',
